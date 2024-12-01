@@ -21,22 +21,22 @@ public class CrawlSmartPhones {
 	public void startCrawling() throws InterruptedException
 	{
 		String url=CrawlerConstants.AMAZON_URL;
-		
-		for(int i=3001;i<=4000;i++) {
+		MongoClient mongoClient=MongoClients.create(CrawlerConstants.MONGODB_URL);
+		OkHttpClient client = new OkHttpClient();
+		for(int i=5001;i<=11000;i++) {
 			StringBuilder pageUrl=new StringBuilder();
 			pageUrl.append(url+"/s?k=smartphones&page=").append(i);
-			storeProducts(pageUrl);
-			System.out.println("stored "+String.valueOf(i)+" products");
-			Thread.sleep((int) (Math.random() * 10+1));
+			storeProducts(pageUrl,i,mongoClient,client);
+			
 		}
 		
 	}
 
-	private void storeProducts(StringBuilder pageUrl) {
+	private void storeProducts(StringBuilder pageUrl,int i,MongoClient mongoClient,OkHttpClient client) throws InterruptedException {
 		try {
 			//only crawling smart phones
 			Faker faker=new Faker();
-			OkHttpClient client = new OkHttpClient(); // Connection pooling by default
+			 // Connection pooling by default
 
 	        Request request = new Request.Builder()
 	                .url(pageUrl.toString())
@@ -56,7 +56,6 @@ public class CrawlSmartPhones {
 				
 				//stroring the product details in mongodb database
 				
-				  MongoClient mongoClient=MongoClients.create(CrawlerConstants.MONGODB_URL);
 				  MongoDatabase database = mongoClient.getDatabase("scraped_data");
 				  MongoCollection<org.bson.Document> collection =
 				  database.getCollection("products");
@@ -68,11 +67,13 @@ public class CrawlSmartPhones {
 					  
 				 // Insert the document into the collection
 			     collection.insertOne(productToSave);
-					 
-				
 			}
+			
+			Thread.sleep((int) (Math.random() * 10+1));
 		} catch (Exception e) {
 			// TODO define a well known logging mechanism
+			System.out.println("error occured for "+String.valueOf(i)+" products");
+			Thread.sleep(60000);
 			e.printStackTrace();
 		}
 		
