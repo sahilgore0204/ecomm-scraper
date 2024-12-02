@@ -18,7 +18,7 @@ import okhttp3.Response;
 
 public class CrawlSmartPhones {
 
-	//commit check 1
+	//commit check 2
 	public void startCrawling() throws InterruptedException
 	{
 		String url=CrawlerConstants.AMAZON_URL;
