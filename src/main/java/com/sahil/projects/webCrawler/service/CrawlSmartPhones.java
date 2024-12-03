@@ -25,8 +25,8 @@ import okhttp3.Response;
 public class CrawlSmartPhones {
 
 	//commit check 2
-	private Queue<String> seedUrls=Stream.of(CrawlerConstants.AMAZON_URL+"/s?k=laptops").collect(Collectors.toCollection(LinkedList::new));
-	
+	private Queue<String> seedUrls=Stream.of(CrawlerConstants.AMAZON_URL+"/s?k=laptops",CrawlerConstants.AMAZON_URL+"/s?k=smartphones",CrawlerConstants.AMAZON_URL+"/s?k=gaming+console",CrawlerConstants.AMAZON_URL+"/s?k=television",CrawlerConstants.AMAZON_URL+"/s?k=chargers").collect(Collectors.toCollection(LinkedList::new));
+	private Queue<String> testUrls=Stream.of(CrawlerConstants.AMAZON_URL+"/s?k=gaming+console").collect(Collectors.toCollection(LinkedList::new));
 	public void startCrawling() throws InterruptedException
 	{
 		MongoClient mongoClient=MongoClients.create(CrawlerConstants.MONGODB_URL);
@@ -36,12 +36,14 @@ public class CrawlSmartPhones {
                 .writeTimeout(5, TimeUnit.SECONDS)
 				.build();
 		
-		while(!seedUrls.isEmpty()) {
+		int itr=0;
+		int limit=seedUrls.size()*30;
+		while(itr<limit) {
 			String urlToCrawl=seedUrls.poll();
-			if(urlToCrawl.equals(CrawlerConstants.AMAZON_URL))
-				break;
-			//System.out.println("parsing "+urlToCrawl);
-			seedUrls.offer(storeProducts(urlToCrawl,mongoClient,client));
+			String nextUrl=storeProducts(urlToCrawl,mongoClient,client);
+			seedUrls.offer(nextUrl);
+			itr++;
+			Thread.sleep((int) (Math.random() * 10+1));
 		}
 		System.out.println("ended");
 		/*for(int i=5001;i<=11000;i++) {
@@ -68,11 +70,13 @@ public class CrawlSmartPhones {
 	        if(!response.isSuccessful()) {
 	        	throw new Exception("connection timeout for "+pageUrl);
 	        }
-			Document doc=Jsoup.parse(response.body().string());
+	        String htmlString=response.body().string();
+			Document doc=Jsoup.parse(htmlString);
 			Elements products=doc.select(".s-card-container");
 			
-			nextUrl=CrawlerConstants.AMAZON_URL + doc.select("span.s-pagination-strip li");
-			System.out.println(nextUrl);
+			nextUrl=pageUrl;
+			if(doc.select("a[aria-label*=next]").last()!=null)
+			nextUrl=CrawlerConstants.AMAZON_URL + doc.select("a[aria-label*=next]").last().attr("href");
 			for(Element product:products) {
 				String productUrl=CrawlerConstants.AMAZON_URL+product.select("a.s-no-outline").attr("href");
 				String imgUrl=product.select("a.s-no-outline").select("img.s-image").attr("src");
@@ -96,12 +100,11 @@ public class CrawlSmartPhones {
 			}
 			
 			System.out.println("crawling successfull for "+pageUrl);
-			Thread.sleep((int) (Math.random() * 10+1));
 		} catch (Exception e) {
 			// TODO define a well known logging mechanism
 			System.out.println("error occured for "+pageUrl);
 			e.printStackTrace();
-			Thread.sleep(60000);
+			Thread.sleep(5000);
 		}
 		return nextUrl;
 	}
