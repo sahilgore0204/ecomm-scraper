@@ -46,13 +46,6 @@ public class CrawlSmartPhones {
 			Thread.sleep((int) (Math.random() * 10+1));
 		}
 		System.out.println("ended");
-		/*for(int i=5001;i<=11000;i++) {
-			StringBuilder pageUrl=new StringBuilder();
-			pageUrl.append(url+"/s?k=smartphones&page=").append(i);
-			storeProducts(pageUrl,i,mongoClient,client);
-			
-		}*/
-		
 	}
 
 	private String storeProducts(String pageUrl,MongoClient mongoClient,OkHttpClient client) throws InterruptedException {
